@@ -12,8 +12,8 @@ android {
         applicationId = "com.droidproger.byedpilight"
         minSdk = 24
         targetSdk = 36
-        versionCode = 4
-        versionName = "1.2.1"
+        versionCode = 6
+        versionName = "1.3"
         setProperty("archivesBaseName","ByeDpiLight-$versionName")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -87,6 +87,8 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation("androidx.datastore:datastore-preferences:1.1.7")
     implementation(libs.androidx.lifecycle.service)
+    implementation(libs.gson)
+    implementation(libs.androidx.documentfile)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

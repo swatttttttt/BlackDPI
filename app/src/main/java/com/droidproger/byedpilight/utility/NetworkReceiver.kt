@@ -30,7 +30,7 @@ class NetworkReceiver : BroadcastReceiver() {
             if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {
                 if (dataModel.mobile){
                     startDpi(context)
-                }else{
+                }else if (!dataModel.startedManually){
                     stopDpi(context)
                 }
             } else if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) or
@@ -38,7 +38,7 @@ class NetworkReceiver : BroadcastReceiver() {
                         capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) {
                 if (dataModel.anyConn){
                     startDpi(context)
-                }else{
+                }else if (!dataModel.startedManually){
                     stopDpi(context)
                 }
             }
@@ -56,6 +56,7 @@ fun startDpi(context: Context){
         } else {
             ServiceManager.start(context)
         }
+        dataModel.startedManually = false
     }
 }
 

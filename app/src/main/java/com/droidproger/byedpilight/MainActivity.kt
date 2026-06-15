@@ -1,6 +1,7 @@
 package com.droidproger.byedpilight
 
 import android.content.pm.PackageManager.FEATURE_LEANBACK
+import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -13,6 +14,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.droidproger.byedpilight.ui.MainScreen
+import com.droidproger.byedpilight.ui.SavedCmdScreen
 import com.droidproger.byedpilight.ui.SettingsScreen
 import com.droidproger.byedpilight.ui.TvScreen
 import com.droidproger.byedpilight.ui.theme.ComposeAppTheme
@@ -45,16 +47,16 @@ class MainActivity : ComponentActivity() {
         setContent {
             if (packageManager.hasSystemFeature(FEATURE_LEANBACK)){
                 TvComposeTheme {
-                    CreateTvUi(
-                        prefStore
-                    )
+                        CreateTvUi(
+                            prefStore
+                        )
                 }
             }else{
                 ComposeAppTheme {
-                    dataModel.textMinLines = 5
-                    CreateUi(
-                        prefStore
-                    )
+                        dataModel.textMinLines = 5
+                        CreateUi(
+                            prefStore
+                        )
                 }
             }
         }
@@ -72,7 +74,9 @@ fun CreateUi(prefStore: PrefStore) {//,activity: Activity
         composable("settings"){
             SettingsScreen(navController, prefStore)
         }
-
+        composable("savedcmd"){
+            SavedCmdScreen(navController, prefStore)
+        }
     }
 }
 
@@ -84,6 +88,14 @@ fun CreateTvUi(prefStore: PrefStore){
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
+    ComposeAppTheme {
+        CreateUi(prefStore = PrefStore(LocalContext.current))
+    }
+}
+
+@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+fun DarkPreview() {
     ComposeAppTheme {
         CreateUi(prefStore = PrefStore(LocalContext.current))
     }

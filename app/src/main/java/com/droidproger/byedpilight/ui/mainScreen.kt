@@ -3,6 +3,7 @@ package com.droidproger.byedpilight.ui
 import android.app.Activity.RESULT_OK
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.net.VpnService
 import android.util.Log
 import android.widget.Toast
@@ -24,6 +25,7 @@ import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -76,73 +78,75 @@ fun MainScreen(navController: NavController){
                 }
         }
     val bottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-    Column (
-        Modifier
-            .fillMaxSize()
-            .padding(bottom = bottomPadding)
-    ){
-        TopAppBar(
-            title = {
-                Text(stringResource(R.string.app_name) )
-            },
-            actions = {
-                IconButton(
-                    onClick = {
-                        navController.navigate("settings")
-                    }
-                )
-                {
-                    Icon(
-                        imageVector = Icons.Filled.Settings,
-                        contentDescription = "settings"
-                    )
-                }
-                IconButton(
-                    onClick = {
-                        menuExpanded = true
-                    }
-                )
-                {
-                    Icon(
-                        imageVector = Icons.Filled.Menu,
-                        contentDescription = "menu"
-                    )
-                    DropdownMenu(
-                        expanded = menuExpanded,
-                        onDismissRequest = { menuExpanded = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.saveLogs)) },
-                            onClick = {
-                                val intent =
-                                    Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
-                                        addCategory(Intent.CATEGORY_OPENABLE)
-                                        type = "text/plain"
-                                        putExtra(Intent.EXTRA_TITLE, "byedpi.log")
-                                    }
-
-                                logsRegister.launch(intent)
-                                menuExpanded = false
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.about)) },
-                            onClick = {
-                                menuExpanded = false
-                                dataModel.showAbout = true
-                            }
-                        )
-                    }
-                }
-            }
-
-        )
+    Surface {
         Column (
-            Modifier.fillMaxSize(),
-            Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+            Modifier
+                .fillMaxSize()
+                .padding(bottom = bottomPadding)
         ){
-            MainButtons(context)
+            TopAppBar(
+                title = {
+                    Text(stringResource(R.string.app_name) )
+                },
+                actions = {
+                    IconButton(
+                        onClick = {
+                            navController.navigate("settings")
+                        }
+                    )
+                    {
+                        Icon(
+                            imageVector = Icons.Filled.Settings,
+                            contentDescription = "settings"
+                        )
+                    }
+                    IconButton(
+                        onClick = {
+                            menuExpanded = true
+                        }
+                    )
+                    {
+                        Icon(
+                            imageVector = Icons.Filled.Menu,
+                            contentDescription = "menu"
+                        )
+                        DropdownMenu(
+                            expanded = menuExpanded,
+                            onDismissRequest = { menuExpanded = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.saveLogs)) },
+                                onClick = {
+                                    val intent =
+                                        Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                                            addCategory(Intent.CATEGORY_OPENABLE)
+                                            type = "text/plain"
+                                            putExtra(Intent.EXTRA_TITLE, "byedpi.log")
+                                        }
+
+                                    logsRegister.launch(intent)
+                                    menuExpanded = false
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.about)) },
+                                onClick = {
+                                    menuExpanded = false
+                                    dataModel.showAbout = true
+                                }
+                            )
+                        }
+                    }
+                }
+
+            )
+            Column (
+                Modifier.fillMaxSize(),
+                Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ){
+                MainButtons(context)
+            }
         }
     }
     if (dataModel.showAbout){
@@ -169,9 +173,11 @@ fun MainButtons(context: Context){
                     if (dataModel.mobile or dataModel.anyConn){
                         dataModel.stoppedManually = true
                     }
+                    dataModel.startedManually = false
                     ServiceManager.stop(context)
                 }else{
                     dataModel.stoppedManually = false
+                    dataModel.startedManually = true
                     val intentPrepare = VpnService.prepare(context)
                     if (intentPrepare != null) {
                         vpnRegister.launch(intentPrepare)
@@ -192,6 +198,14 @@ fun MainButtons(context: Context){
 @Preview(showBackground = true)
 @Composable
 fun MainPreview() {
+    ComposeAppTheme {
+        MainScreen(navController = rememberNavController())
+    }
+}
+
+@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+fun DarkMainPreview() {
     ComposeAppTheme {
         MainScreen(navController = rememberNavController())
     }

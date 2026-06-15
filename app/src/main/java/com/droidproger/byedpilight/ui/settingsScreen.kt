@@ -5,6 +5,7 @@ import android.Manifest
 import android.app.Activity.RESULT_OK
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
@@ -36,6 +37,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -73,41 +75,47 @@ var tempDns = dataModel.dnsIp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(navController: NavController, prefStore: PrefStore){
-
     val bottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-    Column (
-        Modifier
-            .fillMaxSize()
-            .padding(bottom = bottomPadding)
-    ) {
-        TopAppBar(
-            title = {
-                Text(stringResource(R.string.settings))
-            },
-            navigationIcon = {
-                IconButton(
-                    onClick = {
-                        navController.navigateUp()
-                    }
-                )
-                {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = ""
+    Surface {
+        Column (
+            Modifier
+                .fillMaxSize()
+                .padding(bottom = bottomPadding)
+        ) {
+            TopAppBar(
+                title = {
+                    Text(stringResource(R.string.settings))
+                },
+                navigationIcon = {
+                    IconButton(
+                        onClick = {
+                            dataModel.isCmdEdit = false
+                            navController.navigateUp()
+                        }
                     )
+                    {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = ""
+                        )
+                    }
+                }
+
+            )
+            Settings(prefStore,navController)
+            if (dataModel.showWarn) {
+                StopServiceDialog()
+            }else{
+                if (dataModel.saveToJson){
+                    SaveCmdToJsonDialog()
                 }
             }
-
-        )
-        Settings(prefStore)
-        if (dataModel.showWarn) {
-            StopServiceDialog()
         }
     }
 }
 
 @Composable
-fun Settings(prefStore: PrefStore){
+fun Settings(prefStore: PrefStore, navController: NavController){
     val scope = rememberCoroutineScope()
     val colorScheme = MaterialTheme.colorScheme
     Column(
@@ -161,7 +169,9 @@ fun Settings(prefStore: PrefStore){
                 )
             }
         }
-        ByeDpiSettings(prefStore,scope)
+        ByeDpiSettings(prefStore,scope)//,navController
+        ManageCmd(navController)
+        RequestPerm()
         // ----------------
         Row(
             Modifier.fillMaxWidth(),
@@ -262,24 +272,8 @@ fun Settings(prefStore: PrefStore){
 }
 
 @Composable
-fun ByeDpiSettings(prefStore: PrefStore, scope: CoroutineScope){
-    val context = LocalContext.current
-    val permissionLauncher= rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ){
-        if (it.resultCode != RESULT_OK) {// granted
-            Toast.makeText(context, R.string.accessPermDenied, Toast.LENGTH_SHORT).show()
-        }
-    }
-    val requestPermissionsLauncher = rememberLauncherForActivityResult(
-         ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        val granted = permissions.values.all { it }
-        if (!granted) {
-            Toast.makeText(context, R.string.accessPermDenied, Toast.LENGTH_SHORT).show()
-        }
-    }
-
+fun ByeDpiSettings(prefStore: PrefStore, scope: CoroutineScope){//,navController: NavController
+    //val context = LocalContext.current
     Row(
         Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center,
@@ -306,6 +300,64 @@ fun ByeDpiSettings(prefStore: PrefStore, scope: CoroutineScope){
         enabled = dataModel.isCmdEdit,
         minLines = dataModel.textMinLines
     )
+}
+@Composable
+fun ManageCmd(navController: NavController){
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center,
+        Alignment.CenterVertically
+    ){
+        ElevatedButton(
+            onClick = {
+                if (dataModel.serviceStatus == ServiceStatus.Connected){
+                    // show warning
+                    dataModel.showWarn = true
+                }else{
+                    navController.navigate("savedcmd")
+                }
+            },
+            Modifier
+                .weight(1f)
+                .padding(start = 10.dp, end = 5.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.load)
+            )
+        }
+        ElevatedButton(
+            onClick = {
+                saveCmdToJson()
+            },
+            Modifier
+                .weight(1f)
+                .padding(start = 5.dp, end = 10.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.save)
+            )
+        }
+    }
+}
+
+@Composable
+fun RequestPerm(){
+    val context = LocalContext.current
+    val permissionLauncher= rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ){
+        if (it.resultCode != RESULT_OK) {// granted
+            Toast.makeText(context, R.string.accessPermDenied, Toast.LENGTH_SHORT).show()
+        }
+    }
+    val requestPermissionsLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val granted = permissions.values.all { it }
+        if (!granted) {
+            Toast.makeText(context, R.string.accessPermDenied, Toast.LENGTH_SHORT).show()
+        }
+    }
     Text(
         stringResource(R.string.requestText),
         Modifier//.weight(1f)
@@ -532,9 +584,9 @@ fun SetButtons(prefStore: PrefStore, id: Int, scope: CoroutineScope){
         IconButton( // close button
             onClick = {
                 when (id){
-                    1 -> CloseCmdEdit()
-                    2 -> ClosePortEdit()
-                    3 -> CloseDnsEdit()
+                    1 -> closeCmdEdit()
+                    2 -> closePortEdit()
+                    3 -> closeDnsEdit()
                 }
             }
         ) {
@@ -546,9 +598,9 @@ fun SetButtons(prefStore: PrefStore, id: Int, scope: CoroutineScope){
         IconButton( // save button
             onClick = {
                 when (id){
-                    1 -> SaveCmd(prefStore, scope)
-                    2 -> SavePort(prefStore,scope)
-                    3 -> SaveDns(prefStore,scope)
+                    1 -> saveCmd(prefStore, scope)
+                    2 -> savePort(prefStore,scope)
+                    3 -> saveDns(prefStore,scope)
                 }
             }
         ) {
@@ -562,9 +614,9 @@ fun SetButtons(prefStore: PrefStore, id: Int, scope: CoroutineScope){
         IconButton( // edit button
             onClick = {
                 when (id){
-                    1 -> EditCmd()
-                    2 -> EditPort()
-                    3 -> EditDns()
+                    1 -> editCmd()
+                    2 -> editPort()
+                    3 -> editDns()
                 }
             }
         ) {
@@ -576,12 +628,12 @@ fun SetButtons(prefStore: PrefStore, id: Int, scope: CoroutineScope){
     }
 }
 
-fun CloseCmdEdit(){
+fun closeCmdEdit(){
     dataModel.isCmdEdit = false
     tempCmdLine = dataModel.cmdLine
 }
 
-fun SaveCmd(prefStore: PrefStore, scope: CoroutineScope){
+fun saveCmd(prefStore: PrefStore, scope: CoroutineScope){
     dataModel.isCmdEdit = false
     dataModel.cmdLine = tempCmdLine
     scope.launch {
@@ -589,7 +641,7 @@ fun SaveCmd(prefStore: PrefStore, scope: CoroutineScope){
     }
 }
 
-fun EditCmd(){
+fun editCmd(){
     if (dataModel.serviceStatus == ServiceStatus.Connected){
         // show warning
         dataModel.showWarn = true
@@ -598,19 +650,22 @@ fun EditCmd(){
     }
 }
 
-fun ClosePortEdit(){
+fun saveCmdToJson(){
+    dataModel.saveToJson = true
+}
+fun closePortEdit(){
     dataModel.isPortEdit = false
     tempProxyPort = dataModel.proxyPort
 }
 
-fun SavePort(prefStore: PrefStore, scope: CoroutineScope){
+fun savePort(prefStore: PrefStore, scope: CoroutineScope){
     dataModel.isPortEdit = false
     dataModel.proxyPort = tempProxyPort
     scope.launch {
         prefStore.saveProxyPort(tempProxyPort)
     }
 }
-fun EditPort(){
+fun editPort(){
     if (dataModel.serviceStatus == ServiceStatus.Connected){
         // show warning
         dataModel.showWarn = true
@@ -618,19 +673,19 @@ fun EditPort(){
         dataModel.isPortEdit = true
     }
 }
-fun CloseDnsEdit(){
+fun closeDnsEdit(){
     dataModel.isDnsEdit = false
     tempDns = dataModel.dnsIp
 }
 
-fun SaveDns(prefStore: PrefStore, scope: CoroutineScope){
+fun saveDns(prefStore: PrefStore, scope: CoroutineScope){
     dataModel.isDnsEdit = false
     dataModel.dnsIp = tempDns
     scope.launch {
         prefStore.saveDns(tempDns)
     }
 }
-fun EditDns(){
+fun editDns(){
     if (dataModel.serviceStatus == ServiceStatus.Connected){
         // show warning
         dataModel.showWarn = true
@@ -642,6 +697,14 @@ fun EditDns(){
 @Preview(showBackground = true)
 @Composable
 fun SettingsPreview() {
+    ComposeAppTheme {
+        SettingsScreen(navController = rememberNavController(), prefStore = PrefStore(LocalContext.current))
+    }
+}
+
+@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+fun DarkSettingsPreview() {
     ComposeAppTheme {
         SettingsScreen(navController = rememberNavController(), prefStore = PrefStore(LocalContext.current))
     }

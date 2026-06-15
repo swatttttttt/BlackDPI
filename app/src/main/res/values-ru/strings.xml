@@ -3,6 +3,7 @@
     <string name="app_name">ByeDpiLight</string>
     <string name="vpn_channel_name">ByeDpiVpn</string>
     <string name="settings">Настройки</string>
+    <string name="savedParams">Сохраненные параметры</string>
     <string name="connect">Подключить</string>
     <string name="connected">Подключено</string>
     <string name="disconnect">Отключить</string>
@@ -15,6 +16,8 @@
     <string name="about">О приложении</string>
     <string name="logsFailed">Не удалось собрать журналы</string>
     <string name="byedpiSettings">Настройки byedpi</string>
+    <string name="load">Загрузить</string>
+    <string name="save">Сохранить</string>
     <string name="hevsocks5Settings">Настройки hev-socks5-tunnel</string>
     <string name="requestText">Если вы используете параметр hosts в командной строке запросите разрешение на доступ ко всем файлам нажав кнопку ниже</string>
     <string name="requestBtnText">Запросить разрешение</string>
@@ -27,6 +30,16 @@
     <string name="accessPermError">Ошибка при запросе разрешения</string>
     <string name="warning">Предупреждение</string>
     <string name="warnText">Сначала отключите vpn!</string>
+    <string name="enterName">Введите имя</string>
+    <string name="cancel">Отмена</string>
+    <string name="paramSet">Набор параметров 1</string>
+    <string name="imporT">Импорт</string>
+    <string name="export">Экспорт</string>
+    <string name="delete">Удалить</string>
+    <string name="current">(текущие)</string>
+    <string name="setExist">Такой набор параметров уже сохранен</string>
+    <string name="fileNotCreated">Не удалось создать файл для хранения json</string>
+    <string name="nameDontSet">Некорректное имя набора параметров</string>
     <string name="aboutText">Это приложение надстройка над byedpi. Оно основано на коде ByeDPIAndroid и использует hev-socks5-tunnel как впн туннель к byedpi</string>
     <string name="byedpi" >byedpi на GitHub</string>
     <string name="byedpiLink" translatable="false">https://github.com/hufrea/byedpi</string>
