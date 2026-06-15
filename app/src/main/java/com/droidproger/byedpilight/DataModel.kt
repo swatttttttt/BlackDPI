@@ -16,7 +16,6 @@ import com.droidproger.byedpilight.ui.tempCmdLine
 import com.droidproger.byedpilight.utility.NetworkReceiver
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
-import com.google.gson.reflect.TypeToken
 import java.io.File
 import java.io.IOException
 import kotlin.collections.arrayListOf
@@ -86,7 +85,6 @@ class DataModel: ViewModel() {
     fun createJsonStr(list: ArrayList<CmdLineData>): String{
         val gson = Gson()
         val jsonString = JsonString(gson.toJson(list))
-        //jsonString.value=
         return jsonString.value
     }
 
