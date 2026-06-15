@@ -17,7 +17,6 @@ import com.droidproger.byedpilight.utility.NetworkReceiver
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import com.google.gson.reflect.TypeToken
-import kotlinx.serialization.Serializable
 import java.io.File
 import java.io.IOException
 import kotlin.collections.arrayListOf
@@ -93,9 +92,9 @@ class DataModel: ViewModel() {
 
     fun loadJson(jsonString: String){
         val gson = Gson()
-        val token = object : TypeToken<ArrayList<CmdLineData>>() {}.type
+        //val token = object : TypeToken<ArrayList<CmdLineData>>() {}.type
         try {
-            val tempCmdList:Array<CmdLineData> = gson.fromJson(jsonString, Array<CmdLineData>::class.java)//<ArrayList<CmdLineData>>
+            val tempCmdList:Array<CmdLineData> = gson.fromJson(jsonString, Array<CmdLineData>::class.java)//
             for(i in 0..tempCmdList.size-1){
                 val tempCmdData: CmdLineData = tempCmdList[i]
                 val name = tempCmdData.name
