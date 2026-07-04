@@ -13,23 +13,41 @@ import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Done
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -54,12 +72,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
@@ -626,29 +650,16 @@ fun Tun2socksSettings(prefStore: PrefStore, scope: CoroutineScope){
     }
 
     // --- UDP over TCP ---
-    Row(
-        Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center,
-        Alignment.CenterVertically
-    ) {
-        Text(
-            stringResource(R.string.udpOverTcp),
-            Modifier
-                .weight(1f)
-                .padding(10.dp, 10.dp, 10.dp, 10.dp)
-        )
-        var udpValue by remember { mutableStateOf(tempUdpOverTcp) }
-        Switch(
-            checked = udpValue,
-            onCheckedChange = {
-                tempUdpOverTcp = it
-                udpValue = it
-                dataModel.udpOverTcp = it
-                scope.launch { prefStore.saveUdpOverTcp(it) }
-            },
-            modifier = Modifier.padding(10.dp, 10.dp, 10.dp, 10.dp)
-        )
-    }
+    var udpValue by remember { mutableStateOf(tempUdpOverTcp) }
+    UdpOverTcpCard(
+        checked = udpValue,
+        onToggle = {
+            tempUdpOverTcp = it
+            udpValue = it
+            dataModel.udpOverTcp = it
+            scope.launch { prefStore.saveUdpOverTcp(it) }
+        }
+    )
 
     // --- IPv6 ---
     Row(
@@ -741,6 +752,135 @@ fun AutoStartSettings(prefStore: PrefStore, scope: CoroutineScope){
 
 fun saveCmdToJson(){
     dataModel.saveToJson = true
+}
+
+@Composable
+fun UdpOverTcpCard(checked: Boolean, onToggle: (Boolean) -> Unit) {
+    val primary = MaterialTheme.colorScheme.primary
+
+    val containerColor by animateColorAsState(
+        targetValue = if (checked) primary.copy(alpha = 0.13f)
+                      else MaterialTheme.colorScheme.surfaceContainer,
+        animationSpec = tween(400, easing = FastOutSlowInEasing),
+        label = "udpContainer"
+    )
+    val borderColor by animateColorAsState(
+        targetValue = if (checked) primary.copy(alpha = 0.55f) else Color.Transparent,
+        animationSpec = tween(400, easing = FastOutSlowInEasing),
+        label = "udpBorder"
+    )
+    val iconTint by animateColorAsState(
+        targetValue = if (checked) primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f),
+        animationSpec = tween(400, easing = FastOutSlowInEasing),
+        label = "udpIcon"
+    )
+
+    // Pulse ring that animates only when active
+    val infiniteTransition = rememberInfiniteTransition(label = "udpPulse")
+    val pulseScale by infiniteTransition.animateFloat(
+        initialValue = 0.55f, targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(1400, easing = LinearEasing), RepeatMode.Restart),
+        label = "pulseScale"
+    )
+    val pulseAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.45f, targetValue = 0f,
+        animationSpec = infiniteRepeatable(tween(1400, easing = LinearEasing), RepeatMode.Restart),
+        label = "pulseAlpha"
+    )
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .clickable { onToggle(!checked) },
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+        border = BorderStroke(1.dp, borderColor)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 18.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            // Animated signal icon
+            Canvas(modifier = Modifier.size(46.dp)) {
+                val cx = size.width / 2f
+                val cy = size.height * 0.62f
+                val maxR = size.width * 0.42f
+                val stroke = Stroke(width = 2.6.dp.toPx(), cap = StrokeCap.Round)
+
+                // Pulse ring
+                if (checked) {
+                    drawCircle(
+                        color = iconTint,
+                        radius = maxR * pulseScale * 1.15f,
+                        center = Offset(cx, cy),
+                        alpha = pulseAlpha,
+                        style = Stroke(width = 1.8.dp.toPx())
+                    )
+                }
+
+                // 3 signal arcs (wifi-style, pointing up)
+                val arcs = listOf(0.28f to 0.45f, 0.55f to 0.65f, 0.82f to 0.85f)
+                arcs.forEachIndexed { idx, (radiusFactor, alpha) ->
+                    val r = maxR * radiusFactor * 2
+                    drawArc(
+                        color = iconTint,
+                        startAngle = 210f,
+                        sweepAngle = 120f,
+                        useCenter = false,
+                        topLeft = Offset(cx - r / 2f, cy - r / 2f),
+                        size = Size(r, r),
+                        style = stroke,
+                        alpha = if (checked) alpha else alpha * 0.5f
+                    )
+                }
+
+                // Center dot
+                drawCircle(
+                    color = iconTint,
+                    radius = 3.2.dp.toPx(),
+                    center = Offset(cx, cy + maxR * 0.82f * 0.28f)
+                )
+            }
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "UDP over TCP",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(Modifier.height(3.dp))
+                Text(
+                    text = if (checked)
+                        "UDP-трафик туннелируется через TCP"
+                    else
+                        "Прямая передача UDP-пакетов",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
+                )
+                if (checked) {
+                    Spacer(Modifier.height(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .background(primary.copy(alpha = 0.18f), RoundedCornerShape(6.dp))
+                            .padding(horizontal = 9.dp, vertical = 3.dp)
+                    ) {
+                        Text(
+                            text = "АКТИВНО",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.2.sp,
+                            color = primary
+                        )
+                    }
+                }
+            }
+
+            Switch(checked = checked, onCheckedChange = onToggle)
+        }
+    }
 }
 
 @Preview(showBackground = true)
