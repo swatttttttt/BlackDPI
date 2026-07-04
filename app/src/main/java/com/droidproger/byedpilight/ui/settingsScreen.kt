@@ -37,6 +37,7 @@ import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -139,7 +140,7 @@ fun Settings(prefStore: PrefStore, navController: NavController){
     }
     Column(
         Modifier
-            .wrapContentSize()
+            .fillMaxWidth()
             .verticalScroll(rememberScrollState())
     ) {
         Row(
@@ -488,18 +489,21 @@ fun Tun2socksSettings(prefStore: PrefStore, scope: CoroutineScope){
         )
         val dnsOptions = listOf("77.88.8.8", "8.8.8.8", "1.1.1.1")
         var expanded by remember { mutableStateOf(false) }
+        var dnsValue by remember { mutableStateOf(tempDns.ifBlank { dnsOptions.first() }) }
         ExposedDropdownMenuBox(
             expanded = expanded,
-            onExpandedChange = { expanded = !expanded },
+            onExpandedChange = { if (dataModel.isDnsEdit) expanded = !expanded },
             modifier = Modifier
                 .weight(0.9f)
                 .padding(8.dp)
         ) {
             TextField(
-                value = tempDns.ifBlank { dnsOptions.first() },
+                value = dnsValue,
                 onValueChange = {},
                 readOnly = true,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor(MenuAnchorType.PrimaryNotEditable),
                 enabled = dataModel.isDnsEdit,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 colors = TextFieldDefaults.colors(
@@ -516,6 +520,7 @@ fun Tun2socksSettings(prefStore: PrefStore, scope: CoroutineScope){
                         text = { Text(option) },
                         onClick = {
                             tempDns = option
+                            dnsValue = option
                             expanded = false
                         }
                     )
@@ -537,18 +542,21 @@ fun Tun2socksSettings(prefStore: PrefStore, scope: CoroutineScope){
         )
         val providerOptions = listOf("auto", "google", "yandex", "mailru", "beeline", "mts", "megafon", "tele2", "other")
         var providerExpanded by remember { mutableStateOf(false) }
+        var providerValue by remember { mutableStateOf(tempProvider) }
         ExposedDropdownMenuBox(
             expanded = providerExpanded,
-            onExpandedChange = { providerExpanded = !providerExpanded },
+            onExpandedChange = { if (dataModel.isDnsEdit) providerExpanded = !providerExpanded },
             modifier = Modifier
                 .weight(1f)
                 .padding(8.dp)
         ) {
             TextField(
-                value = tempProvider,
+                value = providerValue,
                 onValueChange = {},
                 readOnly = true,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor(MenuAnchorType.PrimaryNotEditable),
                 enabled = dataModel.isDnsEdit,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = providerExpanded) },
                 colors = TextFieldDefaults.colors(
@@ -565,6 +573,7 @@ fun Tun2socksSettings(prefStore: PrefStore, scope: CoroutineScope){
                         text = { Text(option) },
                         onClick = {
                             tempProvider = option
+                            providerValue = option
                             providerExpanded = false
                         }
                     )
@@ -583,9 +592,10 @@ fun Tun2socksSettings(prefStore: PrefStore, scope: CoroutineScope){
                 .weight(1f)
                 .padding(10.dp, 10.dp, 10.dp, 10.dp)
         )
+        val sniText = remember { mutableStateOf(tempSniHost) }
         TextField(
-            value = tempSniHost,
-            onValueChange = { tempSniHost = it },
+            value = sniText.value,
+            onValueChange = { tempSniHost = it; sniText.value = it },
             modifier = Modifier
                 .weight(1f)
                 .padding(8.dp),
