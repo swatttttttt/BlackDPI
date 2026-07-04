@@ -497,10 +497,10 @@ fun Tun2socksSettings(prefStore: PrefStore, scope: CoroutineScope){
                 value = tempDns.ifBlank { dnsOptions.first() },
                 onValueChange = {},
                 readOnly = true,
-                modifier = Modifier.menuAnchor().fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
                 enabled = dataModel.isDnsEdit,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                colors = TextFieldDefaults.colors(
+                colors = TextFieldDefaults.textFieldColors(
                     focusedContainerColor = MaterialTheme.colorScheme.surface,
                     unfocusedContainerColor = MaterialTheme.colorScheme.surface,
                 )
@@ -546,10 +546,10 @@ fun Tun2socksSettings(prefStore: PrefStore, scope: CoroutineScope){
                 value = tempProvider,
                 onValueChange = {},
                 readOnly = true,
-                modifier = Modifier.menuAnchor().fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
                 enabled = dataModel.isDnsEdit,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = providerExpanded) },
-                colors = TextFieldDefaults.colors(
+                colors = TextFieldDefaults.textFieldColors(
                     focusedContainerColor = MaterialTheme.colorScheme.surface,
                     unfocusedContainerColor = MaterialTheme.colorScheme.surface,
                 )
