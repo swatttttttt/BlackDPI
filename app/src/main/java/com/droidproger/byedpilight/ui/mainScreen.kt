@@ -130,13 +130,6 @@ fun MainScreen(navController: NavController){
                                     menuExpanded = false
                                 }
                             )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.about)) },
-                                onClick = {
-                                    menuExpanded = false
-                                    dataModel.showAbout = true
-                                }
-                            )
                         }
                     }
                 }
@@ -150,9 +143,6 @@ fun MainScreen(navController: NavController){
                 MainButtons(context)
             }
         }
-    }
-    if (dataModel.showAbout){
-        AboutScreen()
     }
 }
 

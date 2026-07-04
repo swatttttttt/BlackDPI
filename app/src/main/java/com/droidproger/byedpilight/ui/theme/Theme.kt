@@ -88,7 +88,7 @@ val darkScheme = darkColorScheme(
 
 @Composable
 fun ComposeAppTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = true,
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = false,
     content: @Composable() () -> Unit

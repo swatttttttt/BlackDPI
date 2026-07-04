@@ -646,7 +646,6 @@ fun Tun2socksSettings(prefStore: PrefStore, scope: CoroutineScope){
                 dataModel.udpOverTcp = it
                 scope.launch { prefStore.saveUdpOverTcp(it) }
             },
-            enabled = isEnabled,
             modifier = Modifier.padding(10.dp, 10.dp, 10.dp, 10.dp)
         )
     }
