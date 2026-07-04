@@ -70,7 +70,7 @@ android {
             useLegacyPackaging = true
         }
     }
-    //ndkVersion = "27.0.12077973" // e.g.,  ndkVersion "21.3.6528147"
+    ndkVersion = "25.2.9519653"
 //------------
 }
 
