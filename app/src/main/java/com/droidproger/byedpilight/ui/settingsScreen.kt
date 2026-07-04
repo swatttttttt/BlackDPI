@@ -29,9 +29,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Done
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -292,8 +290,8 @@ fun Settings(prefStore: PrefStore, navController: NavController){
 }
 
 @Composable
-fun ByeDpiSettings(prefStore: PrefStore, scope: CoroutineScope){//,navController: NavController
-    //val context = LocalContext.current
+fun ByeDpiSettings(prefStore: PrefStore, scope: CoroutineScope){
+    val isEnabled = dataModel.serviceStatus != ServiceStatus.Connected
     Row(
         Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center,
@@ -305,19 +303,27 @@ fun ByeDpiSettings(prefStore: PrefStore, scope: CoroutineScope){//,navController
                 .weight(1f)
                 .padding(10.dp, 0.dp, 0.dp, 0.dp)
         )
-        SetButtons(prefStore, 1, scope)
+        IconButton(
+            onClick = {
+                dataModel.cmdLine = tempCmdLine
+                scope.launch { prefStore.saveCmdLine(tempCmdLine) }
+            },
+            enabled = isEnabled
+        ) {
+            Icon(imageVector = Icons.Filled.Done, contentDescription = null)
+        }
     }
-    val text = remember { mutableStateOf(tempCmdLine) }//
+    val text = remember { mutableStateOf(tempCmdLine) }
     TextField(
         value = text.value,
         onValueChange = {
             tempCmdLine = it
-            text.value = it//tempCmdLine
+            text.value = it
         },
         Modifier
             .padding(8.dp)
             .fillMaxWidth(),
-        enabled = dataModel.isCmdEdit,
+        enabled = isEnabled,
         minLines = dataModel.textMinLines
     )
 }
@@ -447,7 +453,9 @@ fun RequestPerm(){
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Tun2socksSettings(prefStore: PrefStore, scope: CoroutineScope){
+    val isEnabled = dataModel.serviceStatus != ServiceStatus.Connected
 
+    // --- Proxy port ---
     Row(
         Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center,
@@ -455,17 +463,18 @@ fun Tun2socksSettings(prefStore: PrefStore, scope: CoroutineScope){
     ) {
         Text(
             stringResource(R.string.hevsocks5Port),
-            Modifier
-                //.weight(0.1f)
-                .padding(10.dp, 0.dp, 10.dp, 0.dp)
+            Modifier.padding(10.dp, 0.dp, 10.dp, 0.dp)
         )
-        val text = remember { mutableStateOf(tempProxyPort.toString()) }//
+        val portText = remember { mutableStateOf(tempProxyPort.toString()) }
         TextField(
-            value = text.value,
+            value = portText.value,
             onValueChange = {
-                text.value = it
-                if (it.length > 0) {
-                    tempProxyPort = it.toInt()
+                portText.value = it
+                val port = it.toIntOrNull()
+                if (port != null) {
+                    tempProxyPort = port
+                    dataModel.proxyPort = port
+                    scope.launch { prefStore.saveProxyPort(port) }
                 }
             },
             Modifier
@@ -473,10 +482,11 @@ fun Tun2socksSettings(prefStore: PrefStore, scope: CoroutineScope){
                 .padding(8.dp),
             placeholder = { Text(stringResource(R.string.hevsocks5PortHint)) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            enabled = dataModel.isPortEdit,
+            enabled = isEnabled,
         )
-        SetButtons(prefStore, 2, scope)
     }
+
+    // --- DNS ---
     Row(
         Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center,
@@ -484,15 +494,14 @@ fun Tun2socksSettings(prefStore: PrefStore, scope: CoroutineScope){
     ) {
         Text(
             stringResource(R.string.hevsocks5Dns),
-            Modifier
-                .padding(10.dp, 0.dp, 10.dp, 0.dp)
+            Modifier.padding(10.dp, 0.dp, 10.dp, 0.dp)
         )
         val dnsOptions = listOf("77.88.8.8", "8.8.8.8", "1.1.1.1")
         var expanded by remember { mutableStateOf(false) }
         var dnsValue by remember { mutableStateOf(tempDns.ifBlank { dnsOptions.first() }) }
         ExposedDropdownMenuBox(
             expanded = expanded,
-            onExpandedChange = { if (dataModel.isDnsEdit) expanded = !expanded },
+            onExpandedChange = { if (isEnabled) expanded = !expanded },
             modifier = Modifier
                 .weight(0.9f)
                 .padding(8.dp)
@@ -504,7 +513,7 @@ fun Tun2socksSettings(prefStore: PrefStore, scope: CoroutineScope){
                 modifier = Modifier
                     .fillMaxWidth()
                     .menuAnchor(MenuAnchorType.PrimaryNotEditable),
-                enabled = dataModel.isDnsEdit,
+                enabled = isEnabled,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = MaterialTheme.colorScheme.surface,
@@ -521,14 +530,17 @@ fun Tun2socksSettings(prefStore: PrefStore, scope: CoroutineScope){
                         onClick = {
                             tempDns = option
                             dnsValue = option
+                            dataModel.dnsIp = option
+                            scope.launch { prefStore.saveDns(option) }
                             expanded = false
                         }
                     )
                 }
             }
         }
-        SetButtons(prefStore, 3, scope)
     }
+
+    // --- Provider strategy ---
     Row(
         Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center,
@@ -545,7 +557,7 @@ fun Tun2socksSettings(prefStore: PrefStore, scope: CoroutineScope){
         var providerValue by remember { mutableStateOf(tempProvider) }
         ExposedDropdownMenuBox(
             expanded = providerExpanded,
-            onExpandedChange = { if (dataModel.isDnsEdit) providerExpanded = !providerExpanded },
+            onExpandedChange = { if (isEnabled) providerExpanded = !providerExpanded },
             modifier = Modifier
                 .weight(1f)
                 .padding(8.dp)
@@ -557,7 +569,7 @@ fun Tun2socksSettings(prefStore: PrefStore, scope: CoroutineScope){
                 modifier = Modifier
                     .fillMaxWidth()
                     .menuAnchor(MenuAnchorType.PrimaryNotEditable),
-                enabled = dataModel.isDnsEdit,
+                enabled = isEnabled,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = providerExpanded) },
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = MaterialTheme.colorScheme.surface,
@@ -574,6 +586,8 @@ fun Tun2socksSettings(prefStore: PrefStore, scope: CoroutineScope){
                         onClick = {
                             tempProvider = option
                             providerValue = option
+                            dataModel.provider = option
+                            scope.launch { prefStore.saveProvider(option) }
                             providerExpanded = false
                         }
                     )
@@ -581,6 +595,8 @@ fun Tun2socksSettings(prefStore: PrefStore, scope: CoroutineScope){
             }
         }
     }
+
+    // --- SNI host ---
     Row(
         Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center,
@@ -595,14 +611,21 @@ fun Tun2socksSettings(prefStore: PrefStore, scope: CoroutineScope){
         val sniText = remember { mutableStateOf(tempSniHost) }
         TextField(
             value = sniText.value,
-            onValueChange = { tempSniHost = it; sniText.value = it },
+            onValueChange = {
+                tempSniHost = it
+                sniText.value = it
+                dataModel.sniHost = it
+                scope.launch { prefStore.saveSniHost(it) }
+            },
             modifier = Modifier
                 .weight(1f)
                 .padding(8.dp),
-            enabled = dataModel.isDnsEdit,
+            enabled = isEnabled,
             placeholder = { Text(stringResource(R.string.sniHostHint)) }
         )
     }
+
+    // --- UDP over TCP ---
     Row(
         Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center,
@@ -614,13 +637,21 @@ fun Tun2socksSettings(prefStore: PrefStore, scope: CoroutineScope){
                 .weight(1f)
                 .padding(10.dp, 10.dp, 10.dp, 10.dp)
         )
+        var udpValue by remember { mutableStateOf(tempUdpOverTcp) }
         Switch(
-            checked = tempUdpOverTcp,
-            onCheckedChange = { tempUdpOverTcp = it },
-            enabled = dataModel.isDnsEdit,
+            checked = udpValue,
+            onCheckedChange = {
+                tempUdpOverTcp = it
+                udpValue = it
+                dataModel.udpOverTcp = it
+                scope.launch { prefStore.saveUdpOverTcp(it) }
+            },
+            enabled = isEnabled,
             modifier = Modifier.padding(10.dp, 10.dp, 10.dp, 10.dp)
         )
     }
+
+    // --- IPv6 ---
     Row(
         Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center,
@@ -636,12 +667,9 @@ fun Tun2socksSettings(prefStore: PrefStore, scope: CoroutineScope){
             checked = dataModel.ipv6enabled,
             onCheckedChange = {
                 dataModel.ipv6enabled = it
-                scope.launch {
-                    prefStore.saveIpv6enable(it)
-                }
+                scope.launch { prefStore.saveIpv6enable(it) }
             },
-            Modifier
-                .padding(10.dp, 10.dp, 10.dp, 10.dp)
+            Modifier.padding(10.dp, 10.dp, 10.dp, 10.dp)
         )
     }
 }
@@ -712,135 +740,8 @@ fun AutoStartSettings(prefStore: PrefStore, scope: CoroutineScope){
 
 }
 
-@Composable
-fun SetButtons(prefStore: PrefStore, id: Int, scope: CoroutineScope){
-    var isEdit = false
-    when (id){
-        1 -> isEdit = dataModel.isCmdEdit
-        2 -> isEdit = dataModel.isPortEdit
-        3 -> isEdit = dataModel.isDnsEdit
-    }
-    if (isEdit) {//dataModel.isCmdEdit
-        IconButton( // close button
-            onClick = {
-                when (id){
-                    1 -> closeCmdEdit()
-                    2 -> closePortEdit()
-                    3 -> closeDnsEdit()
-                }
-            }
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Close,
-                contentDescription = null
-            )
-        }
-        IconButton( // save button
-            onClick = {
-                when (id){
-                    1 -> saveCmd(prefStore, scope)
-                    2 -> savePort(prefStore,scope)
-                    3 -> saveDns(prefStore,scope)
-                }
-            }
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Done,
-                contentDescription = null
-            )
-        }
-
-    }else{
-        IconButton( // edit button
-            onClick = {
-                when (id){
-                    1 -> editCmd()
-                    2 -> editPort()
-                    3 -> editDns()
-                }
-            }
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Edit,
-                contentDescription = null
-            )
-        }
-    }
-}
-
-fun closeCmdEdit(){
-    dataModel.isCmdEdit = false
-    tempCmdLine = dataModel.cmdLine
-}
-
-fun saveCmd(prefStore: PrefStore, scope: CoroutineScope){
-    dataModel.isCmdEdit = false
-    dataModel.cmdLine = tempCmdLine
-    scope.launch {
-        prefStore.saveCmdLine(tempCmdLine)
-    }
-}
-
-fun editCmd(){
-    if (dataModel.serviceStatus == ServiceStatus.Connected){
-        // show warning
-        dataModel.showWarn = true
-    }else{
-        dataModel.isCmdEdit = true
-    }
-}
-
 fun saveCmdToJson(){
     dataModel.saveToJson = true
-}
-fun closePortEdit(){
-    dataModel.isPortEdit = false
-    tempProxyPort = dataModel.proxyPort
-}
-
-fun savePort(prefStore: PrefStore, scope: CoroutineScope){
-    dataModel.isPortEdit = false
-    dataModel.proxyPort = tempProxyPort
-    scope.launch {
-        prefStore.saveProxyPort(tempProxyPort)
-    }
-}
-fun editPort(){
-    if (dataModel.serviceStatus == ServiceStatus.Connected){
-        // show warning
-        dataModel.showWarn = true
-    }else{
-        dataModel.isPortEdit = true
-    }
-}
-fun closeDnsEdit(){
-    dataModel.isDnsEdit = false
-    tempDns = dataModel.dnsIp
-    tempProvider = dataModel.provider
-    tempSniHost = dataModel.sniHost
-    tempUdpOverTcp = dataModel.udpOverTcp
-}
-
-fun saveDns(prefStore: PrefStore, scope: CoroutineScope){
-    dataModel.isDnsEdit = false
-    dataModel.dnsIp = tempDns
-    dataModel.provider = tempProvider
-    dataModel.sniHost = tempSniHost
-    dataModel.udpOverTcp = tempUdpOverTcp
-    scope.launch {
-        prefStore.saveDns(tempDns)
-        prefStore.saveProvider(tempProvider)
-        prefStore.saveSniHost(tempSniHost)
-        prefStore.saveUdpOverTcp(tempUdpOverTcp)
-    }
-}
-fun editDns(){
-    if (dataModel.serviceStatus == ServiceStatus.Connected){
-        // show warning
-        dataModel.showWarn = true
-    }else{
-        dataModel.isDnsEdit = true
-    }
 }
 
 @Preview(showBackground = true)

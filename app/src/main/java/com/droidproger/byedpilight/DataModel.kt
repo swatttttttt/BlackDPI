@@ -28,12 +28,12 @@ class DataModel: ViewModel() {
     var anyConn by mutableStateOf(false)
     var mobile by mutableStateOf(false)
     var textMinLines: Int = 3
-    var isCmdEdit by mutableStateOf(false)
+    var isCmdEdit by mutableStateOf(true)
     var cmdLine by mutableStateOf("")
-    var isPortEdit by mutableStateOf(false)
+    var isPortEdit by mutableStateOf(true)
     var proxyPort by mutableIntStateOf(value = 1080)
 
-    var isDnsEdit by mutableStateOf(false)
+    var isDnsEdit by mutableStateOf(true)
     var dnsIp by mutableStateOf(value = "1.1.1.1")
     var provider by mutableStateOf(value = "auto")
     var sniHost by mutableStateOf(value = "")
