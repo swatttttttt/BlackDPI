@@ -35,6 +35,9 @@ class DataModel: ViewModel() {
 
     var isDnsEdit by mutableStateOf(false)
     var dnsIp by mutableStateOf(value = "1.1.1.1")
+    var provider by mutableStateOf(value = "auto")
+    var sniHost by mutableStateOf(value = "")
+    var udpOverTcp by mutableStateOf(value = false)
     var ipv6enabled  by mutableStateOf(value = false)
     var showAbout by mutableStateOf(value = false)
     var showWarn by mutableStateOf(value = false)

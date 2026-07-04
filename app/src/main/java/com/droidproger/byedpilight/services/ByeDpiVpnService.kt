@@ -288,7 +288,23 @@ class ByeDpiVpnService : LifecycleVpnService() {
     private fun cmdToArgs(cmd: String): Array<String> {
         val firstArgIndex = cmd.indexOf("-")
         val argsStr = (if (firstArgIndex > 0) cmd.substring(firstArgIndex) else cmd).trim()
-        return arrayOf("ciadpi") + shellSplit(argsStr)
+        val baseArgs = shellSplit(argsStr)
+        val provider = dataModel.provider.takeIf { it.isNotBlank() } ?: "auto"
+        val strategyArgs = mutableListOf<String>()
+
+        if (provider != "auto") {
+            strategyArgs += "-s"
+            strategyArgs += provider
+        }
+        if (dataModel.sniHost.isNotBlank()) {
+            strategyArgs += "-n"
+            strategyArgs += dataModel.sniHost
+        }
+        if (dataModel.udpOverTcp) {
+            strategyArgs += "-U"
+        }
+
+        return arrayOf("ciadpi") + baseArgs + strategyArgs
     }
 
 }

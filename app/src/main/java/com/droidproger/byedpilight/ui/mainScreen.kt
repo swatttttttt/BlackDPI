@@ -11,6 +11,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -186,10 +187,19 @@ fun MainButtons(context: Context){
                     }
                 }
             },
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .padding(vertical = 16.dp),
         ){
-            Text ( stringResource(dataModel.btnTextRes()))
+            Text(
+                text = stringResource(dataModel.btnTextRes()),
+                modifier = Modifier.padding(vertical = 16.dp),
+            )
         }
-        Text ( stringResource(dataModel.statusTextRes()))
+        Text(
+            text = stringResource(dataModel.statusTextRes()),
+            modifier = Modifier.padding(top = 8.dp)
+        )
 
 }
 

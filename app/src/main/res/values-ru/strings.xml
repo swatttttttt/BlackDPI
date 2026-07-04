@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">ByeDpiLight</string>
+    <string name="app_name">BlackDPI</string>
     <string name="vpn_channel_name">ByeDpiVpn</string>
     <string name="settings">Настройки</string>
     <string name="savedParams">Сохраненные параметры</string>
@@ -24,6 +24,10 @@
     <string name="hevsocks5Port">Порт</string>
     <string name="hevsocks5PortHint">Должен совпадать с портом byedpi</string>
     <string name="hevsocks5Dns">DNS</string>
+    <string name="providerStrategy">Стратегия под провайдера</string>
+    <string name="sniHost">SNI host</string>
+    <string name="sniHostHint">например: google.com</string>
+    <string name="udpOverTcp">Режим UDP-over-TCP</string>
     <string name="ipv6enable">Включить IPv6</string>
     <string name="accessPermDenied">Разрешение на доступ ко всем файлам не предоставлено</string>
     <string name="accessPermGranted">Разрешение на доступ ко всем файла уже предоставлено</string>

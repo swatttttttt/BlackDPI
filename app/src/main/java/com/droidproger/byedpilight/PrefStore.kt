@@ -18,6 +18,9 @@ class PrefStore(private val context: Context) {
         val cmdLineKey = stringPreferencesKey("cmdLine")
         val proxyPortKey = intPreferencesKey("proxyPort")
         val dnsKey = stringPreferencesKey("dns")
+        val providerKey = stringPreferencesKey("provider")
+        val sniHostKey = stringPreferencesKey("sniHost")
+        val udpOverTcpKey = booleanPreferencesKey("udpOverTcp")
         val ipv6key = booleanPreferencesKey("ipv6enable")
 
         val mobKey = booleanPreferencesKey("autoStartMobile")
@@ -49,6 +52,33 @@ class PrefStore(private val context: Context) {
     suspend fun saveDns(value: String){
         context.dataStore.edit { preference ->
             preference[dnsKey] = value }
+    }
+
+    val provider: Flow<String> = context.dataStore.data.map {
+            preferences -> preferences[providerKey] ?: "auto"
+    }
+
+    suspend fun saveProvider(value: String){
+        context.dataStore.edit { preference ->
+            preference[providerKey] = value }
+    }
+
+    val sniHost: Flow<String> = context.dataStore.data.map {
+            preferences -> preferences[sniHostKey] ?: ""
+    }
+
+    suspend fun saveSniHost(value: String){
+        context.dataStore.edit { preference ->
+            preference[sniHostKey] = value }
+    }
+
+    val udpOverTcp: Flow<Boolean> = context.dataStore.data.map {
+            preferences -> preferences[udpOverTcpKey] ?: false
+    }
+
+    suspend fun saveUdpOverTcp(value: Boolean){
+        context.dataStore.edit { preference ->
+            preference[udpOverTcpKey] = value }
     }
 
     val ipv6Enable: Flow<Boolean> = context.dataStore.data.map {

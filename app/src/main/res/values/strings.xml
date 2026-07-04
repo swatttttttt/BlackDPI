@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">ByeDpiLight</string>
+    <string name="app_name">BlackDPI</string>
     <string name="vpn_channel_name">ByeDpiVpn</string>
     <string name="settings">Settings</string>
     <string name="savedParams">Saved params</string>
@@ -23,6 +23,10 @@
     <string name="hevsocks5Port">Port</string>
     <string name="hevsocks5PortHint">Should be same as byedpi port</string>
     <string name="hevsocks5Dns">DNS</string>
+    <string name="providerStrategy">Provider strategy</string>
+    <string name="sniHost">SNI host</string>
+    <string name="sniHostHint">example: google.com</string>
+    <string name="udpOverTcp">UDP-over-TCP mode</string>
     <string name="ipv6enable">Enable IPv6</string>
     <string name="accessPermDenied">All files access permission not granted</string>
     <string name="accessPermGranted">All files access permission already granted</string>

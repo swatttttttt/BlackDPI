@@ -32,8 +32,12 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenu
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -41,6 +45,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -71,6 +76,9 @@ import kotlinx.coroutines.launch
 var tempCmdLine = dataModel.cmdLine
 var tempProxyPort = dataModel.proxyPort
 var tempDns = dataModel.dnsIp
+var tempProvider = dataModel.provider
+var tempSniHost = dataModel.sniHost
+var tempUdpOverTcp = dataModel.udpOverTcp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -118,6 +126,16 @@ fun SettingsScreen(navController: NavController, prefStore: PrefStore){
 fun Settings(prefStore: PrefStore, navController: NavController){
     val scope = rememberCoroutineScope()
     val colorScheme = MaterialTheme.colorScheme
+    val isInitialized = remember { mutableStateOf(false) }
+    if (!isInitialized.value) {
+        tempCmdLine = dataModel.cmdLine
+        tempProxyPort = dataModel.proxyPort
+        tempDns = dataModel.dnsIp
+        tempProvider = dataModel.provider
+        tempSniHost = dataModel.sniHost
+        tempUdpOverTcp = dataModel.udpOverTcp
+        isInitialized.value = true
+    }
     Column(
         Modifier
             .wrapContentSize()
@@ -464,22 +482,132 @@ fun Tun2socksSettings(prefStore: PrefStore, scope: CoroutineScope){
         Text(
             stringResource(R.string.hevsocks5Dns),
             Modifier
-                //.weight(0.1f)
                 .padding(10.dp, 0.dp, 10.dp, 0.dp)
         )
-        val text = remember { mutableStateOf(tempDns) }//
-        TextField(
-            value = text.value,
-            onValueChange = {
-                tempDns = it
-                text.value = it
-            },
-            Modifier
+        val dnsOptions = listOf("77.88.8.8", "8.8.8.8", "1.1.1.1")
+        var expanded by remember { mutableStateOf(false) }
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = !expanded },
+            modifier = Modifier
                 .weight(0.9f)
+                .padding(8.dp)
+        ) {
+            TextField(
+                value = tempDns.ifBlank { dnsOptions.first() },
+                onValueChange = {},
+                readOnly = true,
+                modifier = Modifier.menuAnchor().fillMaxWidth(),
+                enabled = dataModel.isDnsEdit,
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                )
+            )
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                dnsOptions.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(option) },
+                        onClick = {
+                            tempDns = option
+                            expanded = false
+                        }
+                    )
+                }
+            }
+        }
+        SetButtons(prefStore, 3, scope)
+    }
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center,
+        Alignment.CenterVertically
+    ) {
+        Text(
+            stringResource(R.string.providerStrategy),
+            Modifier
+                .weight(1f)
+                .padding(10.dp, 10.dp, 10.dp, 10.dp)
+        )
+        val providerOptions = listOf("auto", "google", "yandex", "mailru", "beeline", "mts", "megafon", "tele2", "other")
+        var providerExpanded by remember { mutableStateOf(false) }
+        ExposedDropdownMenuBox(
+            expanded = providerExpanded,
+            onExpandedChange = { providerExpanded = !providerExpanded },
+            modifier = Modifier
+                .weight(1f)
+                .padding(8.dp)
+        ) {
+            TextField(
+                value = tempProvider,
+                onValueChange = {},
+                readOnly = true,
+                modifier = Modifier.menuAnchor().fillMaxWidth(),
+                enabled = dataModel.isDnsEdit,
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = providerExpanded) },
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                )
+            )
+            ExposedDropdownMenu(
+                expanded = providerExpanded,
+                onDismissRequest = { providerExpanded = false }
+            ) {
+                providerOptions.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(option) },
+                        onClick = {
+                            tempProvider = option
+                            providerExpanded = false
+                        }
+                    )
+                }
+            }
+        }
+    }
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center,
+        Alignment.CenterVertically
+    ) {
+        Text(
+            stringResource(R.string.sniHost),
+            Modifier
+                .weight(1f)
+                .padding(10.dp, 10.dp, 10.dp, 10.dp)
+        )
+        TextField(
+            value = tempSniHost,
+            onValueChange = { tempSniHost = it },
+            modifier = Modifier
+                .weight(1f)
                 .padding(8.dp),
             enabled = dataModel.isDnsEdit,
+            placeholder = { Text(stringResource(R.string.sniHostHint)) }
         )
-        SetButtons(prefStore, 3, scope)
+    }
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center,
+        Alignment.CenterVertically
+    ) {
+        Text(
+            stringResource(R.string.udpOverTcp),
+            Modifier
+                .weight(1f)
+                .padding(10.dp, 10.dp, 10.dp, 10.dp)
+        )
+        Switch(
+            checked = tempUdpOverTcp,
+            onCheckedChange = { tempUdpOverTcp = it },
+            enabled = dataModel.isDnsEdit,
+            modifier = Modifier.padding(10.dp, 10.dp, 10.dp, 10.dp)
+        )
     }
     Row(
         Modifier.fillMaxWidth(),
@@ -676,13 +804,22 @@ fun editPort(){
 fun closeDnsEdit(){
     dataModel.isDnsEdit = false
     tempDns = dataModel.dnsIp
+    tempProvider = dataModel.provider
+    tempSniHost = dataModel.sniHost
+    tempUdpOverTcp = dataModel.udpOverTcp
 }
 
 fun saveDns(prefStore: PrefStore, scope: CoroutineScope){
     dataModel.isDnsEdit = false
     dataModel.dnsIp = tempDns
+    dataModel.provider = tempProvider
+    dataModel.sniHost = tempSniHost
+    dataModel.udpOverTcp = tempUdpOverTcp
     scope.launch {
         prefStore.saveDns(tempDns)
+        prefStore.saveProvider(tempProvider)
+        prefStore.saveSniHost(tempSniHost)
+        prefStore.saveUdpOverTcp(tempUdpOverTcp)
     }
 }
 fun editDns(){
