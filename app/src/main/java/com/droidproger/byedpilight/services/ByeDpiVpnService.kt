@@ -315,7 +315,8 @@ class ByeDpiVpnService : LifecycleVpnService() {
             // ── GROUP 0 ── primary multi-layer desync (AmneziaWG-style) ──────
             //
             // Apply to all protocol types: TLS/HTTPS (t), HTTP (h), UDP (u).
-            strategyArgs += "-K"; strategyArgs += "tuh"
+            // Parser reads tokens separated by commas, so "t,h,u" not "tuh".
+            strategyArgs += "-K"; strategyArgs += "t,h,u"
 
             // TLS record fragmentation 1 byte after the SNI field starts.
             // The DPI reassembler sees two incomplete TLS records whose SNI
@@ -369,7 +370,7 @@ class ByeDpiVpnService : LifecycleVpnService() {
             // the connection.  Uses different offsets and harder TTL.
             strategyArgs += "-A"; strategyArgs += "t,s"
 
-            strategyArgs += "-K"; strategyArgs += "tuh"
+            strategyArgs += "-K"; strategyArgs += "t,h,u"
 
             // Split at a different SNI position (2 bytes in) so the pattern
             // looks different from group 0 — avoids learning-DPI adaptation.
