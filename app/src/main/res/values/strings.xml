@@ -27,6 +27,7 @@
     <string name="sniHost">SNI host</string>
     <string name="sniHostHint">example: google.com</string>
     <string name="udpOverTcp">UDP-over-TCP mode</string>
+    <string name="obfuscationEnabled">Traffic obfuscation</string>
     <string name="ipv6enable">Enable IPv6</string>
     <string name="accessPermDenied">All files access permission not granted</string>
     <string name="accessPermGranted">All files access permission already granted</string>

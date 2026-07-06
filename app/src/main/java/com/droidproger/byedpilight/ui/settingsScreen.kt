@@ -73,8 +73,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -103,6 +106,7 @@ var tempDns = dataModel.dnsIp
 var tempProvider = dataModel.provider
 var tempSniHost = dataModel.sniHost
 var tempUdpOverTcp = dataModel.udpOverTcp
+var tempObfuscation = dataModel.obfuscationEnabled
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -158,6 +162,7 @@ fun Settings(prefStore: PrefStore, navController: NavController){
         tempProvider = dataModel.provider
         tempSniHost = dataModel.sniHost
         tempUdpOverTcp = dataModel.udpOverTcp
+        tempObfuscation = dataModel.obfuscationEnabled
         isInitialized.value = true
     }
     Column(
@@ -661,27 +666,28 @@ fun Tun2socksSettings(prefStore: PrefStore, scope: CoroutineScope){
         }
     )
 
+    // --- Traffic Obfuscation ---
+    var obfValue by remember { mutableStateOf(tempObfuscation) }
+    ObfuscationCard(
+        checked = obfValue,
+        onToggle = {
+            tempObfuscation = it
+            obfValue = it
+            dataModel.obfuscationEnabled = it
+            scope.launch { prefStore.saveObfuscation(it) }
+        }
+    )
+
     // --- IPv6 ---
-    Row(
-        Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center,
-        Alignment.CenterVertically
-    ) {
-        Text(
-            stringResource(R.string.ipv6enable),
-            Modifier
-                .weight(1f)
-                .padding(10.dp, 10.dp, 10.dp, 10.dp)
-        )
-        Switch(
-            checked = dataModel.ipv6enabled,
-            onCheckedChange = {
-                dataModel.ipv6enabled = it
-                scope.launch { prefStore.saveIpv6enable(it) }
-            },
-            Modifier.padding(10.dp, 10.dp, 10.dp, 10.dp)
-        )
-    }
+    var ipv6Value by remember { mutableStateOf(dataModel.ipv6enabled) }
+    Ipv6Card(
+        checked = ipv6Value,
+        onToggle = {
+            ipv6Value = it
+            dataModel.ipv6enabled = it
+            scope.launch { prefStore.saveIpv6enable(it) }
+        }
+    )
 }
 
 @Composable
@@ -873,6 +879,223 @@ fun UdpOverTcpCard(checked: Boolean, onToggle: (Boolean) -> Unit) {
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.2.sp,
                             color = primary
+                        )
+                    }
+                }
+            }
+
+            Switch(checked = checked, onCheckedChange = onToggle)
+        }
+    }
+}
+
+@Composable
+fun ObfuscationCard(checked: Boolean, onToggle: (Boolean) -> Unit) {
+    val secondary = MaterialTheme.colorScheme.secondary
+
+    val containerColor by animateColorAsState(
+        targetValue = if (checked) secondary.copy(alpha = 0.13f)
+                      else MaterialTheme.colorScheme.surfaceContainer,
+        animationSpec = tween(400, easing = FastOutSlowInEasing),
+        label = "obfContainer"
+    )
+    val borderColor by animateColorAsState(
+        targetValue = if (checked) secondary.copy(alpha = 0.55f) else Color.Transparent,
+        animationSpec = tween(400, easing = FastOutSlowInEasing),
+        label = "obfBorder"
+    )
+    val iconTint by animateColorAsState(
+        targetValue = if (checked) secondary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f),
+        animationSpec = tween(400, easing = FastOutSlowInEasing),
+        label = "obfIcon"
+    )
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .clickable { onToggle(!checked) },
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+        border = BorderStroke(1.dp, borderColor)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 18.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            // Shield icon drawn with Canvas
+            Canvas(modifier = Modifier.size(46.dp)) {
+                val cx = size.width / 2f
+                val cy = size.height / 2f
+                val w = size.width * 0.52f
+                val h = size.height * 0.60f
+                val top = cy - h / 2f
+                val strokeW = 2.4.dp.toPx()
+
+                // Shield outline: two rounded top corners + pointed bottom
+                val path = androidx.compose.ui.graphics.Path().apply {
+                    moveTo(cx, top + h)                          // bottom tip
+                    lineTo(cx - w / 2f, cy + h * 0.10f)         // lower-left
+                    quadraticTo(cx - w / 2f, top, cx, top + h * 0.08f) // upper-left arc
+                    quadraticTo(cx + w / 2f, top, cx + w / 2f, cy + h * 0.10f) // upper-right arc
+                    close()
+                }
+                drawPath(path, color = iconTint,
+                    style = Stroke(width = strokeW, cap = StrokeCap.Round, join = StrokeJoin.Round))
+
+                // Lock shackle (U-shape inside shield)
+                val lw = w * 0.34f
+                val lh = h * 0.22f
+                val lTop = cy - h * 0.05f
+                drawArc(
+                    color = iconTint,
+                    startAngle = 180f, sweepAngle = 180f,
+                    useCenter = false,
+                    topLeft = androidx.compose.ui.geometry.Offset(cx - lw / 2f, lTop - lh),
+                    size = androidx.compose.ui.geometry.Size(lw, lh * 2f),
+                    style = Stroke(width = strokeW, cap = StrokeCap.Round)
+                )
+                // Lock body rect
+                val bw = lw * 1.5f; val bh = h * 0.26f
+                drawRoundRect(
+                    color = iconTint,
+                    topLeft = androidx.compose.ui.geometry.Offset(cx - bw / 2f, cy + h * 0.04f),
+                    size = androidx.compose.ui.geometry.Size(bw, bh),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(3.dp.toPx()),
+                    style = Stroke(width = strokeW)
+                )
+            }
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Обфускация трафика",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(Modifier.height(3.dp))
+                Text(
+                    text = if (checked)
+                        "TLS-фрагментация + блокировка SACK"
+                    else
+                        "Стандартная передача данных",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
+                )
+                if (checked) {
+                    Spacer(Modifier.height(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .background(secondary.copy(alpha = 0.18f), RoundedCornerShape(6.dp))
+                            .padding(horizontal = 9.dp, vertical = 3.dp)
+                    ) {
+                        Text(
+                            text = "АКТИВНО",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.2.sp,
+                            color = secondary
+                        )
+                    }
+                }
+            }
+
+            Switch(checked = checked, onCheckedChange = onToggle)
+        }
+    }
+}
+
+@Composable
+fun Ipv6Card(checked: Boolean, onToggle: (Boolean) -> Unit) {
+    val tertiary = MaterialTheme.colorScheme.tertiary
+
+    val containerColor by animateColorAsState(
+        targetValue = if (checked) tertiary.copy(alpha = 0.13f)
+                      else MaterialTheme.colorScheme.surfaceContainer,
+        animationSpec = tween(400, easing = FastOutSlowInEasing),
+        label = "ipv6Container"
+    )
+    val borderColor by animateColorAsState(
+        targetValue = if (checked) tertiary.copy(alpha = 0.55f) else Color.Transparent,
+        animationSpec = tween(400, easing = FastOutSlowInEasing),
+        label = "ipv6Border"
+    )
+    val iconTint by animateColorAsState(
+        targetValue = if (checked) tertiary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f),
+        animationSpec = tween(400, easing = FastOutSlowInEasing),
+        label = "ipv6Icon"
+    )
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .clickable { onToggle(!checked) },
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+        border = BorderStroke(1.dp, borderColor)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 18.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            // Globe / network icon: circle + latitude + longitude arcs
+            Canvas(modifier = Modifier.size(46.dp)) {
+                val cx = size.width / 2f
+                val cy = size.height / 2f
+                val r = size.width * 0.38f
+                val strokeW = 2.4.dp.toPx()
+                val st = Stroke(width = strokeW, cap = StrokeCap.Round)
+
+                // Outer circle
+                drawCircle(color = iconTint, radius = r, center = androidx.compose.ui.geometry.Offset(cx, cy), style = st)
+                // Horizontal equator
+                drawLine(color = iconTint, start = androidx.compose.ui.geometry.Offset(cx - r, cy),
+                    end = androidx.compose.ui.geometry.Offset(cx + r, cy), strokeWidth = strokeW)
+                // Vertical axis
+                drawLine(color = iconTint, start = androidx.compose.ui.geometry.Offset(cx, cy - r),
+                    end = androidx.compose.ui.geometry.Offset(cx, cy + r), strokeWidth = strokeW)
+                // Two longitude ellipses (drawn as arcs)
+                val ew = r * 0.62f
+                drawArc(color = iconTint, startAngle = 0f, sweepAngle = 180f, useCenter = false,
+                    topLeft = androidx.compose.ui.geometry.Offset(cx - ew / 2f, cy - r),
+                    size = androidx.compose.ui.geometry.Size(ew, r * 2f), style = st)
+                drawArc(color = iconTint, startAngle = 180f, sweepAngle = 180f, useCenter = false,
+                    topLeft = androidx.compose.ui.geometry.Offset(cx - ew / 2f, cy - r),
+                    size = androidx.compose.ui.geometry.Size(ew, r * 2f), style = st)
+            }
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "IPv6",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(Modifier.height(3.dp))
+                Text(
+                    text = if (checked)
+                        "Двойной стек IPv4 + IPv6"
+                    else
+                        "Только IPv4",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
+                )
+                if (checked) {
+                    Spacer(Modifier.height(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .background(tertiary.copy(alpha = 0.18f), RoundedCornerShape(6.dp))
+                            .padding(horizontal = 9.dp, vertical = 3.dp)
+                    ) {
+                        Text(
+                            text = "ВКЛЮЧЕНО",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.2.sp,
+                            color = tertiary
                         )
                     }
                 }

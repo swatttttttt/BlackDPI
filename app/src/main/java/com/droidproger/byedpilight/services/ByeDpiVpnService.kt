@@ -187,14 +187,19 @@ class ByeDpiVpnService : LifecycleVpnService() {
         val dns = dataModel.dnsIp
         val ipv6 = dataModel.ipv6enabled
 
+        val udpOverTcp = dataModel.udpOverTcp
+        // When UDP-over-TCP is on: tunnel UDP inside TCP connections at the
+        // tun2socks level (udp: tcp), reduce MTU to 1400 (TCP-friendly payload
+        // size for wrapped UDP datagrams), and double the coroutine stack so
+        // the extra per-flow TCP state fits without overflow.
         val tun2socksConfig = """
         | misc:
-        |   task-stack-size: 81920
+        |   task-stack-size: ${if (udpOverTcp) 163840 else 81920}
         | socks5:
-        |   mtu: 8500
+        |   mtu: ${if (udpOverTcp) 1400 else 8500}
         |   address: 127.0.0.1
         |   port: $port
-        |   udp: udp
+        |   udp: ${if (udpOverTcp) "tcp" else "udp"}
         """.trimMargin("| ")
 
         val configPath = try {
@@ -301,7 +306,23 @@ class ByeDpiVpnService : LifecycleVpnService() {
             strategyArgs += dataModel.sniHost
         }
         if (dataModel.udpOverTcp) {
+            // -U: tell ciadpi to disable direct UDP forwarding so all UDP
+            // traffic is handled by the TCP tunnel set up in tun2socks config.
             strategyArgs += "-U"
+        }
+
+        if (dataModel.obfuscationEnabled) {
+            // TLS record fragmentation at byte 2: splits the ClientHello across
+            // two TCP segments, breaking most SNI-based DPI inspection.
+            strategyArgs += "-r"
+            strategyArgs += "2+s"
+            // Drop TCP SACK option on outgoing packets.  Many ISP middleboxes
+            // use SACK to reconstruct streams for deep inspection; removing it
+            // forces them to treat the flow as opaque.
+            strategyArgs += "-Y"
+            // Hold back the first data segment briefly so the SYN and the
+            // first payload arrive out of the DPI reassembly window.
+            strategyArgs += "-Z"
         }
 
         return arrayOf("ciadpi") + baseArgs + strategyArgs

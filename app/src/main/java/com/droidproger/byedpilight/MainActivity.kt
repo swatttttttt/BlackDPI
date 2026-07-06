@@ -37,6 +37,7 @@ class MainActivity : ComponentActivity() {
             dataModel.provider = prefStore.provider.first()
             dataModel.sniHost = prefStore.sniHost.first()
             dataModel.udpOverTcp = prefStore.udpOverTcp.first()
+            dataModel.obfuscationEnabled = prefStore.obfuscation.first()
             dataModel.ipv6enabled = prefStore.ipv6Enable.first()
             dataModel.mobile = prefStore.autoStartMobile.first()
             dataModel.anyConn = prefStore.autoStartOther.first()

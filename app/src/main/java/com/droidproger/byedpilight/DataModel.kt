@@ -38,6 +38,7 @@ class DataModel: ViewModel() {
     var provider by mutableStateOf(value = "auto")
     var sniHost by mutableStateOf(value = "")
     var udpOverTcp by mutableStateOf(value = false)
+    var obfuscationEnabled by mutableStateOf(value = false)
     var ipv6enabled  by mutableStateOf(value = false)
     var showAbout by mutableStateOf(value = false)
     var showWarn by mutableStateOf(value = false)

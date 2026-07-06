@@ -21,6 +21,7 @@ class PrefStore(private val context: Context) {
         val providerKey = stringPreferencesKey("provider")
         val sniHostKey = stringPreferencesKey("sniHost")
         val udpOverTcpKey = booleanPreferencesKey("udpOverTcp")
+        val obfuscationKey = booleanPreferencesKey("obfuscation")
         val ipv6key = booleanPreferencesKey("ipv6enable")
 
         val mobKey = booleanPreferencesKey("autoStartMobile")
@@ -79,6 +80,15 @@ class PrefStore(private val context: Context) {
     suspend fun saveUdpOverTcp(value: Boolean){
         context.dataStore.edit { preference ->
             preference[udpOverTcpKey] = value }
+    }
+
+    val obfuscation: Flow<Boolean> = context.dataStore.data.map {
+            preferences -> preferences[obfuscationKey] ?: false
+    }
+
+    suspend fun saveObfuscation(value: Boolean){
+        context.dataStore.edit { preference ->
+            preference[obfuscationKey] = value }
     }
 
     val ipv6Enable: Flow<Boolean> = context.dataStore.data.map {
