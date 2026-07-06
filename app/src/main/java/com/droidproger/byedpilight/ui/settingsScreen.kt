@@ -977,9 +977,9 @@ fun ObfuscationCard(checked: Boolean, onToggle: (Boolean) -> Unit) {
                 Spacer(Modifier.height(3.dp))
                 Text(
                     text = if (checked)
-                        "TLS-фрагментация + блокировка SACK"
+                        "Фейк-пакеты · disorder · OOB · TLS-сплит · 2 группы"
                     else
-                        "Стандартная передача данных",
+                        "Провайдер видит стандартный трафик",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
                 )

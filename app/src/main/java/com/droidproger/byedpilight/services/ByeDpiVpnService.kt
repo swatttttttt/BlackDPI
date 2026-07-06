@@ -312,17 +312,81 @@ class ByeDpiVpnService : LifecycleVpnService() {
         }
 
         if (dataModel.obfuscationEnabled) {
-            // TLS record fragmentation at byte 2: splits the ClientHello across
-            // two TCP segments, breaking most SNI-based DPI inspection.
-            strategyArgs += "-r"
-            strategyArgs += "2+s"
-            // Drop TCP SACK option on outgoing packets.  Many ISP middleboxes
-            // use SACK to reconstruct streams for deep inspection; removing it
-            // forces them to treat the flow as opaque.
+            // ── GROUP 0 ── primary multi-layer desync (AmneziaWG-style) ──────
+            //
+            // Apply to all protocol types: TLS/HTTPS (t), HTTP (h), UDP (u).
+            strategyArgs += "-K"; strategyArgs += "tuh"
+
+            // TLS record fragmentation 1 byte after the SNI field starts.
+            // The DPI reassembler sees two incomplete TLS records whose SNI
+            // bytes are split across a segment boundary — unclassifiable.
+            strategyArgs += "-r"; strategyArgs += "1+s"
+
+            // DESYNC_FAKE at byte 1: inject a decoy packet with a very low TTL
+            // before the real ClientHello.  Like AmneziaWG junk packets — DPI
+            // builds state for the fake, then the real data arrives and doesn't
+            // match, leaving the DPI state machine in an undefined state.
+            strategyArgs += "-f"; strategyArgs += "1"
+
+            // TTL = 4: fake packet expires inside the ISP backbone (typically
+            // 2–3 hops to their DPI cluster) and never reaches the remote host.
+            strategyArgs += "-t"; strategyArgs += "4"
+
+            // Randomise fake packet content on every connection so it cannot
+            // be fingerprinted or blocked by content signature.
+            strategyArgs += "-Q"; strategyArgs += "r"
+
+            // DESYNC_DISORDER at byte 3: send the tail segment before the head.
+            // Standard DPI waits for in-order data; disorder breaks reassembly
+            // on most hardware middleboxes without affecting the endpoint (TCP
+            // reorders at the receiver side).
+            strategyArgs += "-d"; strategyArgs += "3"
+
+            // DESYNC_OOB at byte 4: inject a 1-byte urgent/OOB segment.
+            // Many ISP DPI implementations either crash-handle or skip the
+            // payload entirely when urgent data appears mid-stream.
+            strategyArgs += "-o"; strategyArgs += "4"
+
+            // HTTP obfuscation for plain-HTTP connections:
+            //   r = extra space before Host (breaks Host-header parsers)
+            //   h = randomise header-name casing  (Accept-Encoding → aCcEpT-)
+            //   d = randomise domain case in Host value
+            strategyArgs += "-M"; strategyArgs += "r,h,d"
+
+            // Drop TCP SACK from SYN and data packets.  SACK lets DPI
+            // track exactly which byte ranges arrived; without it the
+            // reassembler loses the ability to close gaps after disorder.
             strategyArgs += "-Y"
-            // Hold back the first data segment briefly so the SYN and the
-            // first payload arrive out of the DPI reassembly window.
+
+            // Widen the desync window: hold the first data segment so the
+            // fake/OOB packets enter the DPI pipeline first, corrupting its
+            // connection state before the real payload is classified.
             strategyArgs += "-Z"
+
+            // ── GROUP 1 ── auto-fallback if group 0 gets blocked ─────────────
+            // Activate when DPI responds with TCP RST (t) or causes a TLS
+            // handshake error (s) — i.e., the ISP's DPI actively terminated
+            // the connection.  Uses different offsets and harder TTL.
+            strategyArgs += "-A"; strategyArgs += "t,s"
+
+            strategyArgs += "-K"; strategyArgs += "tuh"
+
+            // Split at a different SNI position (2 bytes in) so the pattern
+            // looks different from group 0 — avoids learning-DPI adaptation.
+            strategyArgs += "-r"; strategyArgs += "2+s"
+
+            // Fake at byte 2 with TTL=2: dies within 2 hops — guaranteed to
+            // expire inside the ISP PoP, cannot reach any remote inspection.
+            strategyArgs += "-f"; strategyArgs += "2"
+            strategyArgs += "-t"; strategyArgs += "2"
+            strategyArgs += "-Q"; strategyArgs += "r"
+
+            // Shift disorder and OOB to different offsets so traffic patterns
+            // differ from group 0 and confuse adaptive DPI signatures.
+            strategyArgs += "-d"; strategyArgs += "5"
+            strategyArgs += "-o"; strategyArgs += "3"
+
+            strategyArgs += "-Y"
         }
 
         return arrayOf("ciadpi") + baseArgs + strategyArgs
